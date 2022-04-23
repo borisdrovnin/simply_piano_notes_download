@@ -19,7 +19,10 @@
         <!-- <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-dark text-decoration-none">
         <svg class="bi me-2" width="40" height="32" role="img" aria-label="Bootstrap"><use xlink:href="#bootstrap"></use></svg>
       </a> -->
-        <form>
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <form id="select_form" style="display: none;">
           <div class="row">
             <div class="col-sm-10">
               <select class="song_select" name="song">
@@ -33,6 +36,9 @@
               </select>
             </div>
           </div>
+          <p></p>
+          <button id="download" onclick="window.open($('#notes').attr('src'))" type="button"
+            class="btn btn-primary">Скачать</button>
         </form>
       </div>
     </div>
@@ -50,17 +56,19 @@
   <script>
     $(function () {
       $select = $('.song_select');
-      $select.select2({
-        ajax: {
-          url: 'select_data.json',
-          dataType: 'json'
-          // Additional AJAX parameters go here; see the end of this chapter for the full code of this example
-        },
-        placeholder: 'Название композиции или исполнителя',
-        width: '1000px'
+
+      $.getJSON('select_data.json', function (data) {
+        $select.select2({
+          data: data,
+          placeholder: 'Название композиции или исполнителя',
+          width: '1000px'
+        });
+        $select.val("")
+        $select.trigger("change");
+
+        $('#select_form').show();
+        $('.spinner-border').hide();
       });
-      $select.val("")
-      $select.trigger("change");
 
       $diff_select = $('.diff_select');
       $select.on("select2:select", function (e) {
@@ -88,5 +96,4 @@
     });
   </script>
 </body>
-
 </html>
