@@ -30,6 +30,7 @@ end
 assets = nil
 songs_wide = nil
 songs_compact = nil
+
 dlc_url = response.headers['Zip-Url']
 Tempfile.create(['dlc', '.zip'], binmode: true) do |dlc_file|
   dlc_file.write(Faraday.get(dlc_url).body)
@@ -45,8 +46,8 @@ Tempfile.create(['dlc', '.zip'], binmode: true) do |dlc_file|
   end
 end
 
-def generate_select_data(songs, assets, type)
-  songs.each_with_object([]) do |(key, song), memo|
+def generate_select_data(songs_index, songs, assets, compact)
+  songs.each do |key, song|
     artist = song['artistDisplayName']
     name = song['displayName']
 
@@ -60,16 +61,23 @@ def generate_select_data(songs, assets, type)
       }
     end
 
-    memo << {
-      id: "#{key}#{type}",
-      text: "#{artist} #{name} #{type}",
-      arrangements: arrangements.sort_by { |arr| arr[:text] }
+    songs_index[key] ||= {
+      id: key,
+      text: "#{artist} #{name}".strip
     }
+
+    if compact
+      songs_index[key][:arrangements] ||= []
+      songs_index[key][:arrangements_compact] = arrangements.sort_by { |arr| arr[:text] }
+    else
+      songs_index[key][:arrangements] = arrangements.sort_by { |arr| arr[:text] }
+      songs_index[key][:arrangements_compact] ||= []
+    end
   end
 end
 
-select_data = []
-select_data += generate_select_data(songs_compact, assets, ' Compact')
-select_data += generate_select_data(songs_wide, assets, '')
+songs_index = {}
+generate_select_data(songs_index, songs_compact, assets, true)
+generate_select_data(songs_index, songs_wide, assets, false)
 
-File.write('select_data.json', select_data.to_json)
+File.write('select_data.json', songs_index.values.sort_by { |song| song[:text] }.to_json)
