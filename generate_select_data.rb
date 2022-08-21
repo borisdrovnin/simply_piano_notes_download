@@ -32,19 +32,21 @@ songs_wide = nil
 songs_compact = nil
 
 dlc_url = response.headers['Zip-Url']
-Tempfile.create(['dlc', '.zip'], binmode: true) do |dlc_file|
-  dlc_file.write(Faraday.get(dlc_url).body)
-  dlc_file.rewind
+dlc_file = Tempfile.new('dlc.zip')
+dlc_file.binmode
+dlc_file.write(Faraday.get(dlc_url).body)
+dlc_file.rewind
 
-  Zip::File.open(dlc_file.path) do |zip_file|
-    big_file = zip_file.glob('BigFilesMD5s.json').first.get_input_stream.read
-    assets = JSON.parse(big_file)
-    songs_file = zip_file.glob('Songs.config.json').first.get_input_stream.read
-    songs_wide = JSON.parse(songs_file)['songs']
-    songs_file_compact = zip_file.glob('Compact.Songs.config.json').first.get_input_stream.read
-    songs_compact = JSON.parse(songs_file_compact)['songs']
-  end
+Zip::File.open(dlc_file.path) do |zip_file|
+  big_file = zip_file.glob('BigFilesMD5s.json').first.get_input_stream.read
+  assets = JSON.parse(big_file)
+  songs_file = zip_file.glob('Songs.config.json').first.get_input_stream.read
+  songs_wide = JSON.parse(songs_file)['songs']
+  songs_file_compact = zip_file.glob('Compact.Songs.config.json').first.get_input_stream.read
+  songs_compact = JSON.parse(songs_file_compact)['songs']
 end
+
+dlc_file.unlink
 
 def generate_select_data(songs_index, songs, assets, compact)
   songs.each do |key, song|
